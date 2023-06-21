@@ -2,15 +2,12 @@
 
 class DBClient
 {
-
-    // Class properties
     private $host;
     private $user;
     private $pass;
     private $db;
     private $conn;
 
-    // Constructor method
     function __construct($host, $user, $pass, $db)
     {
         $this->host = $host;
@@ -19,39 +16,39 @@ class DBClient
         $this->db = $db;
     }
 
-    // Connect to the database
     function connect()
     {
+        // Establish a connection to the database
         $this->conn = new mysqli($this->host, $this->user, $this->pass, $this->db);
     }
 
-    // Close the database connection
     function close()
     {
+        // Close the database connection
         $this->conn->close();
     }
 
-    // Insert today's exchange rates into the database
     function insertTodayRates($currencies)
     {
-        // Connect to the database
         $this->connect();
 
-        // Start building the SQL query to insert the exchange rates into the database
+        // Prepare the query for inserting exchange rates
         $query = "INSERT INTO exchangeRates (Code, Bid, Ask) ";
-        // Add the SELECT statement to select the exchange rate values from the $value array
         $query .= "SELECT ?, ?, ? ";
-        // Add a subquery to check if the exchange rate already exists for the current date
         $query .= "FROM DUAL WHERE NOT(SELECT ? IN (SELECT `Code` FROM `exchangerates` WHERE `Date`=CURRENT_DATE))";
 
         $prepared = $this->conn->prepare($query);
 
-        // Loop through each currency and insert it into the database if it doesn't already exist at today's date
+        if(!$prepared){
+            return false;
+        }
+        // Iterate through the currencies array and insert each currency rate
         foreach ($currencies as &$value) {
             // Skip the currency if it's PLN
             if ($value[0] == 'PLN') {
                 continue;
             }
+            // Bind parameters and execute the prepared statement
             $prepared->bind_param("sdds", $value[0], $value[1], $value[2], $value[0]);
             $prepared->execute();
         }
@@ -64,14 +61,15 @@ class DBClient
     {
         $this->connect();
         if (!$latest) {
+            // Retrieve all exchange rates from the table in descending order
             $query = "SELECT * FROM exchangeRates ORDER BY Date DESC;";
         } else {
+            // Retrieve the latest exchange rates from the table
             $query = "SELECT * FROM exchangeRates WHERE Date=(SELECT MAX(Date) from exchangeRates);";
         }
 
         $result = $this->conn->query($query);
 
-        // Check if the query executed
         if (!$result) {
             return false;
         }
@@ -79,12 +77,10 @@ class DBClient
         $this->close();
 
         if ($latest) {
-            // Initialize an empty array to store the currency data
             $currencies = array();
-
-            // Add the base currency (PLN) to the array
             $currencies[0] = array('PLN', 1, 1);
 
+            // Fetch the result and store exchange rates in an array
             while ($row = $result->fetch_assoc()) {
                 array_push($currencies, array($row['Code'], $row['Bid'], $row['Ask']));
             }
@@ -93,9 +89,10 @@ class DBClient
             return $result;
         }
     }
-    
+
     function resultAsTable($result){
         while ($row = $result->fetch_assoc()) {
+            // Display each row of the result as a table row
             echo "<tr>";
             foreach ($row as $key => $res) {
                 echo "<th>$res</th>";
@@ -106,6 +103,7 @@ class DBClient
 
     function drawDataFromDB()
     {
+        // Retrieve exchange rates from the database and display as a table
         $result = $this->getDB();
         if ($result) {
             $this->resultAsTable($result);
@@ -121,14 +119,19 @@ class DBClient
             return false;
         }
 
+        // Insert the exchange record into the history table
         $query = "INSERT INTO `exchangehistory`(`currencyFrom`, `currencyTo`, `valueFrom`, `valueTo`)";
         $query .= "VALUES (?, ?, ?, ?);";
-        
+
         $prepared = $this->conn->prepare($query);
+
+        if(!$prepared){
+            return false;
+        }
         
         $prepared->bind_param("ssdd", $currFrom, $currTo, $valueFrom, $valueTo);
         $prepared->execute();
-        
+
         $prepared->close();
     }
 
@@ -137,17 +140,19 @@ class DBClient
 
         $limit = intval($limit);
 
+        // Retrieve exchange history from the database with a specified limit
         $query = "SELECT * FROM `exchangehistory` ORDER BY date DESC LIMIT $limit;";
 
         $result = $this->conn->query($query);
 
-        // Check if the query executed
         if (!$result) {
             return false;
-        }else{
+        } else {
             $this->resultAsTable($result);
         }
 
         $this->close();
     }
 }
+
+?>

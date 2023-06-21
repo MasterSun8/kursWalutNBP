@@ -2,39 +2,32 @@
 
 function getCurrencyRates($date = 'today', $endDate = '', $table = 'c')
 {
-    // Function to retrieve currency exchange rates from the NBP API
-    // $table: the table of currency exchange rates to retrieve (e.g. A for A/W)
-    // $date: the date of the exchange rates to retrieve (in format YYYY-MM-DD)
-    // $endDate: the end date of the range of exchange rates to retrieve (in format YYYY-MM-DD)
-
-    // Construct the API URL with the provided parameters
+    // Construct the API URL based on the provided parameters
     $url = "http://api.nbp.pl/api/exchangerates/tables/";
     $url .= "$table/$date/$endDate";
 
-    // Initialize cURL session
+    // Initialize a cURL session
     $ch = curl_init();
-
-    // Set cURL options to retrieve the data from the API
     curl_setopt($ch, CURLOPT_URL, $url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
     // Execute the cURL session and retrieve the response
     $response = curl_exec($ch);
-
-    // Close the cURL session
     curl_close($ch);
 
-    // Check if the response is an error message (404 Not Found or 400 Bad Request)
-    if (str_starts_with($response, '404 NotFound') || str_starts_with($response, '400 BadRequest')) {
-        return false;
+    // Check if the response indicates an error (404 NotFound or 400 BadRequest)
+    if (strpos($response, '404 NotFound') || strpos($response, '400 BadRequest')) {
+        return false; // Return false if an error occurred
     }
 
-    // Decode the 
+    // Parse the JSON response into an associative array
     $result = json_decode($response, true);
 
+    // Return the first element of the resulting array
     return $result[0];
 }
 
 function exchangeCurrency($val, $from, $to){
+    // Perform currency conversion using the provided values
     return round($val * ($from / $to), 5);
 }

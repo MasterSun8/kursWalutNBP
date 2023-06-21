@@ -1,22 +1,24 @@
 <?php
 function parseAPICall($result)
 {
-    // Check if the data passed is correct
+    // Check if the result is empty or null
     if (!$result) {
-        return false;
+        return false; // Return false if the result is invalid
     }
 
-    // Encode the result as a pretty JSON string and echo it to the browser with a <pre> tag to preserve formatting
+    // Encode the result as a pretty JSON string
     $json = json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+
+    // Output the JSON string with preserved formatting using <pre> tag
     echo '<pre>' . $json . '</pre>';
 }
 
 // Function to extract all currencies from the API call result and return an array of currency data
 function getAllCurrencies($result)
 {
-    // Check if the data passed is correct
+    // Check if the result is empty or null
     if (!$result) {
-        return false;
+        return false; // Return false if the result is invalid
     }
 
     // Extract the rates from the result
