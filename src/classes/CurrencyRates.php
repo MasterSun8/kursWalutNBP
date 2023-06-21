@@ -34,3 +34,7 @@ function getCurrencyRates($date = 'today', $endDate = '', $table = 'c')
 
     return $result[0];
 }
+
+function exchangeCurrency($val, $from, $to){
+    return round($val * ($from / $to), 5);
+}
